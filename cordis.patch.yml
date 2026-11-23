@@ -1,0 +1,3 @@
+- insert:
+    - id: dsh-superagent-webhook-bridge
+      name: dsh-superagent-webhook-bridge

@@ -1,0 +1,26 @@
+name: check
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['22.19.0', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - name: Fetch pinned upstream fixture
+        run: |
+          git init .reference-superagent
+          git -C .reference-superagent remote add origin https://github.com/deepseek-ai/dsh-superagent-prototype.git
+          git -C .reference-superagent fetch --depth 1 origin 8c32a9dc5d72c033816c6a8110b37f40cf94fba4
+          git -C .reference-superagent checkout FETCH_HEAD
+      - run: npm run test:host
+      - run: npm audit --omit=dev
+      - run: npm pack
