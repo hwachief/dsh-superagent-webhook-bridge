@@ -1,10 +1,11 @@
+import { randomUUID } from "./uuid.js";
 import { validateEnabledEvents } from "./event-validation.js";
 import React, { useEffect, useState, createContext, useContext } from "react";
 import { createSource, SourceEditor, Shell } from "./ui.jsx";
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const editable = (e) => ({ ...e, secret: "" });
-const generatedKey = () => crypto.randomUUID().replaceAll("-", "");
+const generatedKey = () => randomUUID().replaceAll("-", "");
 const ToolbarContext = createContext(null);
 export function WebhookToolbarProvider({ children }) {
   const [toolbar, setToolbar] = useState(null);
@@ -87,7 +88,7 @@ export function WebhookSourcePanel({ source, call, reload, onPolicy }) {
         onClick={() =>
           setPending((v) => [
             {
-              uid: crypto.randomUUID(),
+              uid: randomUUID(),
               value: { ...createSource(), enabled: true },
             },
             ...v,

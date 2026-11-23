@@ -1,8 +1,9 @@
+import { randomUUID } from "./uuid.js";
 import { eventAdmission } from "./event-admission.js";
 import { textPaths } from "./text.js";
 import React, { useState } from "react";
 export const createSource = () => ({
-  id: crypto.randomUUID(),
+  id: randomUUID(),
   name: "",
   description: "",
   enabled: false,
@@ -228,8 +229,8 @@ export function SourceEditor({
   onPolicy,
   baseUrl,
 }) {
-  const [adding, setAdding] = useState(false),
-    [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState("");
+  const [unnamedEvents, setUnnamedEvents] = useState(() => new Set());
   const dirty =
     !saved ||
     JSON.stringify({ ...e, secret: e.secret || saved.secret }) !==
@@ -315,7 +316,20 @@ export function SourceEditor({
       </section>
       <div className="wb-event-head">
         <span>接收的事件</span>
-        <Button type="button" onClick={() => setAdding(!adding)}>
+        <Button type="button" onClick={() => {
+          const event = randomUUID();
+          setUnnamedEvents(previous => new Set([...previous, event]));
+          onChange({
+            eventTypes: [...(e.eventTypes || []), event],
+            eventReceivers: {
+              ...e.eventReceivers,
+              [event]: {
+                receivePolicy: { mode: "and", filters: [{ source: "payload", field: "", op: "equals", value: "" }] },
+                fields: [{ name: "", type: "string", expression: "" }],
+              },
+            },
+          });
+        }}>
           + 添加
         </Button>
       </div>
@@ -354,7 +368,9 @@ export function SourceEditor({
                     e.eventsMode === "all" || (e.events || []).includes(event)
                   }
                   maxLength={100}
-                  defaultValue={event}
+                  required
+                  placeholder="请输入事件名称"
+                  defaultValue={unnamedEvents.has(event) ? "" : event}
                   onClick={(ev) => ev.stopPropagation()}
                   onKeyDown={(ev) => {
                     if (ev.key === "Enter") {
@@ -376,7 +392,7 @@ export function SourceEditor({
                         name,
                       )
                     ) {
-                      ev.target.value = event;
+                      ev.target.value = unnamedEvents.has(event) ? "" : event;
                       return;
                     }
                     onChange({
@@ -428,21 +444,12 @@ export function SourceEditor({
           ),
         )}
       </div>
-      {adding && (
-        <AddEvent
-          onAdd={(event) => {
-            onChange({
-              eventTypes: [...new Set([...(e.eventTypes || []), event])],
-            });
-            setAdding(false);
-          }}
-        />
-      )}
+
       <div className="wb-links">
         <Button
           type="button"
           onClick={() => {
-            onChange({ secret: crypto.randomUUID().replaceAll("-", "") });
+            onChange({ secret: randomUUID().replaceAll("-", "") });
             setNotice(
               "已生成 32 位 UUID 密钥，保存后生效，请同步更新发送方密钥",
             );
