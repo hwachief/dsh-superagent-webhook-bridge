@@ -184,7 +184,7 @@ export const EventSchema = z
   .passthrough();
 export const RuntimeSchema = z
   .object({
-    host: z.string().default("127.0.0.1"),
+    host: z.string().default("0.0.0.0"),
     publicUrl: z
       .union([z.url().refine((v) => /^https?:/.test(v)), z.literal("")])
       .default(""),

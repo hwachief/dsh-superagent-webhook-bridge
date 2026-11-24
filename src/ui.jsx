@@ -231,6 +231,16 @@ export function SourceEditor({
 }) {
   const [notice, setNotice] = useState("");
   const [unnamedEvents, setUnnamedEvents] = useState(() => new Set());
+  const [nameErrors, setNameErrors] = useState({});
+  const checkEventName = (input, event) => {
+    const name = input.value.trim();
+    const duplicate = name !== event && [...(e.eventTypes || []), ...(e.events || [])].includes(name);
+    const message = duplicate ? `事件名称“${name}”已存在，请使用不同的名称。` : "";
+    input.setCustomValidity(message);
+    input.setAttribute("aria-invalid", String(duplicate));
+    setNameErrors(previous => ({ ...previous, [event]: message }));
+    return !duplicate;
+  };
   const dirty =
     !saved ||
     JSON.stringify({ ...e, secret: e.secret || saved.secret }) !==
@@ -341,6 +351,7 @@ export function SourceEditor({
                 <input
                   type="checkbox"
                   aria-label={event}
+                  disabled={Boolean(nameErrors[event])}
                   checked={
                     e.eventsMode === "all" || (e.events || []).includes(event)
                   }
@@ -371,6 +382,7 @@ export function SourceEditor({
                   required
                   placeholder="请输入事件名称"
                   defaultValue={unnamedEvents.has(event) ? "" : event}
+                  onChange={(ev) => checkEventName(ev.currentTarget, event)}
                   onClick={(ev) => ev.stopPropagation()}
                   onKeyDown={(ev) => {
                     if (ev.key === "Enter") {
@@ -385,6 +397,7 @@ export function SourceEditor({
                     )
                       return;
                     const name = ev.target.value.trim();
+                    if (!checkEventName(ev.currentTarget, event)) return;
                     if (
                       !name ||
                       name === event ||
@@ -429,6 +442,7 @@ export function SourceEditor({
                   删除
                 </Button>
               </div>
+              {nameErrors[event] && <p role="alert" style={{ color: "var(--dsw-alias-state-error-primary)", marginInline: 14 }}>{nameErrors[event]}</p>}
               <EventReceiverConfig
                 value={e.eventReceivers?.[event] || {}}
                 onChange={(patch) =>
@@ -654,7 +668,7 @@ export function WebhookPolicies({
                   <Select
                     aria-label="比较方式"
                     value={f.op || ""}
-                    onChange={(e) => edit({ op: e.target.value })}
+                    onChange={(e) => edit({ op: e.target.value, ...(e.target.value === "exists" ? { value: "" } : {}) })}
                   >
                     <option value="">请选择比较方式</option>
                     {[
@@ -805,7 +819,7 @@ function ReceiveRules({ endpoint, onChange }) {
             <Select
               aria-label="比较方式"
               value={f.op}
-              onChange={(e) => edit({ op: e.target.value })}
+              onChange={(e) => edit({ op: e.target.value, ...(e.target.value === "exists" ? { value: "" } : {}) })}
             >
               {[
                 ["equals", "等于"],

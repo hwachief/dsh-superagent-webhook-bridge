@@ -3,11 +3,11 @@ export const Config = s.object({
   publicUrl: s
     .string()
     .default("")
-    .description("发送方使用的 Webhook 基础 URL；为空时使用独立监听地址"),
+    .description("发送方使用的 Webhook 基础 URL；为空且监听所有网卡时自动获取本机 IPv4，优先局域网地址"),
   host: s
     .string()
-    .default("127.0.0.1")
-    .description("Webhook 绑定地址；建议只通过 HTTPS 反向代理对外提供服务"),
+    .default("0.0.0.0")
+    .description("Webhook 绑定地址，默认监听所有网卡；仅本机访问可设置 127.0.0.1"),
   port: s.number().min(1).max(65535).step(1).default(9088),
   maxBodyBytes: s.number().min(1024).max(10485760).step(1).default(1048576),
   maxPending: s.number().min(1).max(100000).step(1).default(10000),

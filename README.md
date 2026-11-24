@@ -44,7 +44,7 @@ npm run build
 - id: dsh-superagent-webhook-bridge
   name: dsh-superagent-webhook-bridge
   config:
-    host: 127.0.0.1
+    host: 0.0.0.0
     port: 9088
     maxBodyBytes: 1048576
     maxPending: 10000
@@ -56,6 +56,8 @@ npm run build
 ```
 
 `maxPending` 限制全部保留回执数量；`maxInboxBytes` 限制插件收件箱 JSON 总量，不覆盖宿主其他表和 WAL。容量满返回503。通过现有 HTTPS 代理暴露 `/hooks/`，管理页继续使用 DSH 原有访问控制。不复用参考站点账号密码。
+
+未设置 `publicUrl` 时，默认自动获取本机 IPv4 地址（优先局域网地址），用于来源卡片的 URL。多网卡、容器或反向代理部署可用 `publicUrl` 指定发送方可访问的地址。显式设置 `host: 127.0.0.1` 时仍只供本机访问；已有配置需改为 `0.0.0.0` 才会启用自动获取。自动获取不负责公网 IP、端口映射或防火墙配置。
 
 ## 来源和评估
 

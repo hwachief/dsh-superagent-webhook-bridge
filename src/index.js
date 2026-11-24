@@ -4,6 +4,7 @@ import { webhookKind } from "./kind.js";
 import { Inbox } from "./inbox.js";
 import { createHandler } from "./http.js";
 import { channel } from "./channel.js";
+import { resolvePublicUrl } from "./public-url.js";
 export {
   ConfigSchema,
   PolicySchema,
@@ -25,9 +26,7 @@ export function apply(ctx, input = {}) {
   const kind = {
     ...webhookKind,
     facts: () => ({
-      endpoints:
-        config.publicUrl ||
-        `http://${config.host === "0.0.0.0" ? "127.0.0.1" : config.host}:${config.port}`,
+      endpoints: resolvePublicUrl(config),
     }),
     channel: channel(
       { config: (id) => { const current = source?.config(id); return current && { ...current, endpoints: current.endpoints.map(e => ({ ...e, callbackUrl: "" })) }; } },
