@@ -1,3 +1,4 @@
+import { decideAdmission } from "./pipeline.js";
 import { ConfigSchema, PolicySchema } from "./schema.js";
 const label = (zh, en = zh) => ({ zh, en });
 const text = (key, zh) => ({ key, type: "text", label: label(zh) });
@@ -9,6 +10,15 @@ const select = (key, zh, values) => ({
 });
 export const webhookKind = {
   kind: "webhook",
+  discoverSources(config) {
+    return config.endpoints.map(endpoint => ({
+      id: endpoint.id, name: endpoint.name || endpoint.id,
+      enabled: endpoint.enabled,
+      events: [...new Set([...(endpoint.events || []), ...(endpoint.eventTypes || [])])],
+    }));
+  },
+  identifySource(trigger) { return trigger.meta.endpoint; },
+  identifyEvent(trigger) { return trigger.meta.event; },
   title: label("Webhook"),
   description: label("独立来源与事件订阅，可靠入队后交给 Super-agent 评估。"),
   health: ["webhook"],
@@ -38,6 +48,15 @@ export const webhookKind = {
       (e.eventsMode === "all" || e.events.includes(meta.event))
       ? { listened: true, observed: true, row: e.id }
       : { listened: false, reason: "source_disabled" };
+  },
+  eventAdmission({ meta }, config, policy) {
+    if (!meta.webhookMapped || typeof meta.webhookMapped !== 'object') return undefined;
+    const endpoint = config.endpoints.find(e => e.id === meta.endpoint);
+    const fields = endpoint?.eventReceivers?.[meta.event]?.fields || [];
+    try {
+      const policies = JSON.parse(policy.eventPoliciesJson || '{}');
+      return decideAdmission(policies[meta.endpoint]?.[meta.event], meta.webhookMapped, fields.map(f => f.name));
+    } catch { return 'ignore'; }
   },
   policy: {
     schema: PolicySchema,
